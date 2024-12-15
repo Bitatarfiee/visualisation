@@ -1,0 +1,280 @@
+---
+title: "Visualization -The Efficacy of Nosocomial Infection Control"
+author: "Bita tarfiee"
+date: "`r Sys.Date()`"
+output: html_document
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+```
+
+
+
+### The Efficacy of Nosocomial Infection Control (SENIC)
+Our data set, "SENIC" describes the results of measurements taken at different US hospitals.\ 
+These data were obtained as part of the Study on the Efficacy of Nosocomial Infection Control (SENIC) to determine whether infection surveillance and control programs have reduced the rates of nosocomial (hospital-acquired) infection in US hospitals. 
+
+---
+
+Reading the text file into R
+Since X7: Medical School Affiliation and X8: Region are not quantitative variables, we exclude these two columns from the data set.\ 
+
+---
+
+```{r include=FALSE}
+#Assignment2: part1
+# Creating list of column names
+colname <- list("ID","X1","X2","X3","X4","X5","X6","X7","X8","X9","X10","X11")             
+#Reading data
+data1 <- read.table("SENIC.txt", 
+                   header = FALSE,col.names = colname)
+
+data <- data1[,-c(8:9)]
+
+```
+
+
+---
+
+#### Density plot of infection risk (X3), and the outliers are plotted as a diamond symbol
+
+
+```{r include=FALSE}
+# part2
+Quantiles <- function(x){
+  d <- data[,x]
+  Q1 <- quantile(d, probs = 0.25)
+  Q3 <- quantile(d, probs = 0.75)
+  output <- which(d > Q3+1.5*(Q3-Q1) | d < Q1-1.5*(Q3-Q1))
+  return(output)
+}
+outliers <- Quantiles(4)
+outliers
+
+```
+
+
+
+```{r echo=FALSE, fig.align='center', warning=FALSE, out.width='50%'}
+# part3
+library(ggplot2)
+
+# Get outlier indices
+outliers <- Quantiles(4)
+  
+plot <- ggplot(data, aes(x = X3)) +
+  geom_density(fill = "#E7B800", color = "#E7B800") +
+  geom_point(data = data[outliers, ], aes(x = X3, y = 0), shape = 18, color = "blue", size = 3) +
+  labs(x = "Infection Risk", y = "Density")
+plot
+
+```
+
+
+Infection Risk indicates average estimated probability of acquiring infection in hospital (in percent). By looking at the density plot of the infection risk, we can understand that the distribution of the infection risk is symmetric, so the mean and median of the data are almost the same, so we can conclude that the infection risk in the hospitals based on this observation is almost 4 or 5 percent. 
+Also, by considering the formula given in the question Q3+1.5(Q3 - Q1) and Q1-1.5(Q3-Q1), the observation which is greater than 7.45 and less than 1.45 are outliers as shown in the plot which resides in the tails of data distribution.
+
+---
+
+Density plot for all **quantitative** variables.
+
+
+```{r echo=FALSE, fig.align='center', warning=FALSE, out.width='70%'}
+# part4
+library(gridExtra)
+library(ggplot2)
+
+
+# selecting the list of quantitative columns (X1 to X11 except X7 and X8)
+cols <- c(2:10)
+
+# Create a list to store the plots
+plots <- list()
+
+# Loop through each quantitative variable
+for (i in cols) {
+  # Get outlier indices
+  outliers <- Quantiles(i)
+  
+  # Create density plot
+  p <- ggplot(data, aes_string(x = colnames(data)[i])) +
+    geom_density(fill = "#E7B800", color = "#E7B800") +
+    geom_point(data = data[outliers, ], 
+               aes_string(x = colnames(data)[i], y = 0), 
+               shape = 18, color = "blue", size = 3) + 
+    labs(x = colnames(data)[i], y = "Density")
+  
+  plots[[i-1]] <- p
+}
+
+# Arrange plots in a grid
+grid.arrange(arrangeGrob(grobs = plots, ncol = 3))
+
+```
+
+
+By looking at all the quantitative variable’s graphs, we can see that:
+X2: Age, X3: Infection Risk, X5: Routine Chest X-ray Ratio, X11: Available Facilities & Services have symmetric density distribution.\
+
+And it shows that the average range of patients age(X2) is about 53, the infection Risk(X3) percent is almost 4.5, the Ratio of the number of X-rays performed to the number of patients(X5) is 4.3, and the percentage of 35 potential facilities and services(X11) that the hospital provides is 42.9\
+In this part of data, the density plot is symmetric, so for data analysis, the mean of the data is a valuable metric. In addition, outliers are not so far from the data.\
+But for:\
+X1: Length of Stay, X4: Routine Culturing Ratio, X6: Number of Beds, X9: Average Daily Census, X10: Number of Nurses\
+These density plots are Right-skewed, that is showing some outliers with big differences to the data. Also, by looking at the plots, we can understand that the mean is unreliable for analyzing data, and it is better to use the median.
+
+---
+
+#### Infection risk(X3) on the Number of Nurses (X10) where the points are colored by Number of Beds(X6)
+
+
+```{r echo=FALSE, fig.align='center', message=FALSE, warning=FALSE, out.width='70%', paged.print=FALSE}
+# part5
+p <- ggplot(data, aes(x=X10, y=X3, color=X6))+ 
+  geom_point()+
+  labs( y="Infection Risk", x="Number of Nurses", color="Number of Beds")+
+  ggtitle("Dependence of Infection risk\non the Number of Nurses and Number of Beds") +
+  theme(plot.title = element_text(hjust = 0.5))
+p
+
+```
+
+
+
+We have a scatter plot showing the dependence of Infection risk on the number of Nurses where the Number of Beds is defined as colors the points; the big difference between this plot and a density plot is that a density plot shows the distribution of one variable. Here, we can see the dependence of the variables on each other. For infection risk, we can see that by increasing the number of nurses, the infection risk also increases. Moreover, the plot shows that most hospitals have a large number of beds and the number of nurses is large, so there is more infection risk.\
+
+In such cases that the range of data is large, the color scale cannot show the variable well. In other words, the number of beds in this data changes from 29 to 835. Still, we cannot see a big difference between the number of beds between 0 to 400 or 400 to 800, so this plot cannot show the dependency of infection risk on the number of beds very well.\
+
+
+
+---
+
+
+
+Convert graph from step 3 to **Plotly** with ggplotly function. 
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, out.width='70%', paged.print=FALSE}
+# part6
+library(plotly)
+ggplotly(plot)
+
+```
+
+
+The main difference is interactivity: With Plotly, users can interactively explore the density plot. They can zoom in, pan, and hover over data points to see additional information, such as specific values or tooltips.\
+
+
+
+In the ggplot graph we do not have access to any number in the plot, Here we can see that the max density of X3 distribution is .35 which belongs to X3 equal to 4.42. Moreover, this plot give exact number of the outliers. 
+
+---
+
+Now, we use the data plot-pipeline and the pipeline operator to make a histogram of Infection risk (X3) in which outliers are plotted as a diamond symbol . 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# Part 7
+library(dplyr)
+library(plotly)
+
+fig <- data%>%plot_ly(x=~X3, type = "histogram")%>%
+  add_trace(data=data %>%
+              select(X3)%>%
+              filter(is.element(X3, X3[outliers])),
+            x = ~X3, y =0, type = "scatter", mode = "markers",marker = list(symbol = "diamond", size = 10), color=I("red"))
+fig
+
+
+```
+
+
+---
+
+
+And finally, we write a Shiny app that produces the same kind of plot as in step 4 but in addition include:
+a. Checkboxes indicating for which variables density plots should be produced
+b. A slider changing the bandwidth parameter in the density estimation ("bw" parameter)\
+
+
+
+```{r echo=FALSE}
+
+# Part 8
+library(shiny)
+library(gridExtra)
+library(ggplot2)
+
+colname <- list("ID", "X1", "X2", "X3","X4","X5","X6","X9",
+                "X10","X11")
+col<-colname[-1]
+
+ui <- fluidPage(
+  sliderInput(inputId="ws", label="Choose bandwidth size", value=1, min=1, max=35),
+  plotOutput("densPlot"),
+  checkboxGroupInput(inputId = "variables", label = "Select variables:", 
+                     choices = col, selected =col[1:9])
+)
+
+server <- function(input, output) {
+  
+  output$densPlot <- renderPlot({
+    
+    # Create a list to store the plots
+    # Loop through each quantitative variable
+    # Get outlier indices
+    
+    library(gridExtra)
+    
+    # selecting the list of quantitative columns (X1 to X11)
+    cols <- which(colname %in% input$variables )
+    
+    
+    # Create a list to store the plots
+    plots <- list()
+    
+    # Loop through each quantitative variable
+    for (i in cols) {
+      # Get outlier indices
+      outliers <- Quantiles(i)
+      
+      bandwidth <- as.numeric(input$ws)
+      # Create density plot
+      p <- ggplot(data, aes_string(x = colnames(data)[i])) +
+        geom_density(fill = "#E7B800", color = "#E7B800", bw=bandwidth, position="identity") +
+        geom_point(data = data[outliers, ], aes_string(x = colnames(data)[i], y = 0), shape = 18, color = "blue", size = 3) +
+        labs(x = colnames(data)[i], y = "Density")
+      
+      plots[[i-1]] <- p
+    }
+    
+    # Arrange plots in a grid
+    grid.arrange(arrangeGrob(grobs = plots, ncol = 3))
+    
+  })
+}
+
+# Run the application 
+shinyApp(ui = ui, server=server)
+```
+
+
+---
+
+The smoothing bandwidth to be used. If numeric, the standard deviation of the smoothing kernel. If character, a rule to choose the bandwidth.
+
+We chose the optimal **BW** depend on the data range,
+A wider data range, often requires a larger bandwidth to produce a suitable Kernel density estimate.\
+If your data has a wide range and we choose a small bandwidth, the Kernel Density estimate may be too sensitive to individual data points, resulting in a noisy density curve.\
+On the other hand, if the data range is narrow and we use a large bandwidth, the density estimate may oversmooth the data.\
+So for X1:X5 base on the range of the data and the output of the curve  we choose smaller BW and for X6:X11 we need larger BW.\
+Here I set BW range between 1:35 that can cover all the columns.\
+**We also use bw.nrd0(x) function to examine the dependence of data range and BW ** 
+
+
+
+### Apendix
+```{r ref.label=knitr::all_labels(), echo=TRUE, eval=FALSE}
+```
+
