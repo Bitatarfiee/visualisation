@@ -3,7 +3,13 @@
 In this study we determine the Efficacy of Nosocomial Infection Control (SENIC), checking infection surveillance and control programs have reduced the rates of nosocomial (hospital-acquired) infection in US hospitals.
 
 ## Description
-
+In this project I used: 
+- ggplot2
+- Plotly
+- Use data plot-pipeline and the pipeline operator to make a histogram
+- Shiny app 
+    - Checkboxes indicating for which variables density plots should be produced
+    - A slider changing the bandwidth parameter in the density estimation (‘bw’ parameter)
 
 ## Dataset
 The SENIC Data Set
